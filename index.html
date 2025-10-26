@@ -54,8 +54,9 @@
   .card{background:#0e1117; border:1px solid #242938; border-radius:12px; padding:14px; max-width:100%}
   .big{font-size:24px; font-weight:700}
   .muted{color:var(--muted); font-size:12px}
-  .toggle{display:flex; align-items:center; gap:10px}
-  .toggle span{white-space:normal; word-break:break-word}
+  .toggle{display:flex; align-items:flex-start; gap:10px}
+  .toggle input{margin-top:2px}
+  .toggle span{display:block; max-width:calc(100% - 40px); white-space:normal; overflow-wrap:break-word; word-break:normal; hyphens:auto; line-height:1.3}
   .hr{height:1px; background:#242938; margin:10px 0}
   @media (max-width:900px){.row,.row.compact,.summary{grid-template-columns:1fr 1fr}}
   @media (max-width:560px){.row,.row.compact,.summary{grid-template-columns:1fr}}
@@ -63,9 +64,10 @@
 </head>
 <body>
   <div class="app" id="app">
-    <header><h1>Value Calculator <span style="font-weight:400;color:#aeb3c2">v6</span></h1></header>
+    <header><h1>Value Calculator <span style="font-weight:400;color:#aeb3c2">v7</span></h1></header>
 
     <div class="grid">
+      <!-- Earners -->
       <section class="panel" id="earnersPanel">
         <div class="split">
           <h2>Household earners</h2>
@@ -74,6 +76,7 @@
         <div id="earners"></div>
       </section>
 
+      <!-- Disposable toggle -->
       <section class="panel">
         <h2>Disposable option</h2>
         <label class="toggle">
@@ -96,6 +99,7 @@
         </div>
       </section>
 
+      <!-- Purchase -->
       <section class="panel">
         <h2>Purchase</h2>
         <div class="row compact">
@@ -118,6 +122,7 @@
         </div>
       </section>
 
+      <!-- Results -->
       <section class="panel" id="resultsPanel">
         <h2>Result</h2>
         <div class="summary">
@@ -137,7 +142,7 @@
             <div class="muted" id="vatNote">VAT handling</div>
           </div>
           <div class="card">
-            <div class="muted">Hours needed</div>
+            <div class="muted">Time needed</div>
             <div class="big mono" id="hoursNeeded">0.0 h</div>
             <div class="muted" id="modeNote">Standard or disposable</div>
           </div>
@@ -160,8 +165,24 @@
 const $ = (s, c=document) => c.querySelector(s);
 const $$ = (s, c=document) => Array.from(c.querySelectorAll(s));
 const money = v => isFinite(v) ? '£' + (Math.round(v * 100) / 100).toFixed(2) : '£0.00';
-const hoursFmt = v => isFinite(v) && v !== Infinity ? (Math.round(v * 10) / 10).toFixed(1) + ' h' : '—';
 const debounce = (fn, ms) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms);} };
+
+/* Friendly duration:
+   < 12h -> "H h"
+   12h..7d -> "D d H h"
+   >= 7d -> "W w D d"  */
+function fmtTime(hours) {
+  if (!isFinite(hours) || hours === Infinity || hours <= 0) return '—';
+  if (hours < 12) return `${(Math.round(hours*10)/10).toFixed(1)} h`;
+
+  const days = Math.floor(hours / 24);
+  const remH = Math.round(hours - days*24);
+  if (days < 7) return `${days} d${remH ? ` ${remH} h` : ''}`;
+
+  const weeks = Math.floor(days / 7);
+  const remD = days % 7;
+  return `${weeks} w${remD ? ` ${remD} d` : ''}`;
+}
 
 /* UK PAYE simplified */
 function ukNetFromGross({gross, pensionPct=0, salarySacrifice=true, personalAllowance=12570}) {
@@ -196,7 +217,6 @@ function ukNetFromGross({gross, pensionPct=0, salarySacrifice=true, personalAllo
 /* Earners UI */
 const earnersDiv = $('#earners');
 let earnerId = 0;
-
 function earnerTemplate(id) {
   return `
   <div class="earner" data-id="${id}">
@@ -225,7 +245,6 @@ function earnerTemplate(id) {
     </div>
   </div>`;
 }
-
 function addEarner(prefill) {
   const id = earnerId++;
   const wrap = document.createElement('div'); wrap.innerHTML = earnerTemplate(id);
@@ -242,13 +261,11 @@ function addEarner(prefill) {
     salarySacField.style.display = uk ? 'grid' : 'none';
     otherDeductField.style.display = uk ? 'none' : 'grid';
   }
-  incomeTypeSel.addEventListener('change', toggles);
-  toggles();
+  incomeTypeSel.addEventListener('change', toggles); toggles();
 
   if (prefill) for (const [cls, val] of Object.entries(prefill)) {
     const node = card.querySelector('.' + cls); if (node) node.value = val;
   }
-
   card.querySelector('.removeBtn').addEventListener('click', () => { card.remove(); calculate(); });
   Array.from(card.querySelectorAll('.field input, .field select')).forEach(n => n.addEventListener('input', debounce(calculate, 120)));
 }
@@ -276,8 +293,8 @@ function collectEarners() {
     const amount = +c.querySelector('.amount').value || 0;
     const hpw = +c.querySelector('.hoursPerWeek').value || 0;
     const wpy = +c.querySelector('.weeksPerYear').value || 0;
-
     let annualNet = 0;
+
     if (incomeType === 'annual_net') {
       const other = +c.querySelector('.otherDeduct').value || 0;
       annualNet = Math.max(0, amount - (other * 12));
@@ -296,7 +313,6 @@ function collectEarners() {
     return { annualNet, annualHours };
   });
 }
-
 function householdRates() {
   const earners = collectEarners();
   const totalNet = earners.reduce((a, e) => a + e.annualNet, 0);
@@ -313,7 +329,6 @@ function householdRates() {
 
   return { netHourly, dispHourly, totalNet, totalHours };
 }
-
 function totalPrice() {
   const base = +$('#price').value || 0;
   const extras = +$('#priceExtras').value || 0;
@@ -324,22 +339,19 @@ function totalPrice() {
   else if (vatMode === 'none') vatNote = 'Not applied';
   return { total, vatNote };
 }
-
 function calculate() {
   const { netHourly, dispHourly, totalNet, totalHours } = householdRates();
-  const { total, vatNote } = totalPrice();
-  const mode = useDisposable.checked ? 'Disposable' : 'Standard';
-  const hourly = useDisposable.checked ? dispHourly : netHourly;
+  const { total } = totalPrice();
+  const hourly = $('#useDisposable').checked ? dispHourly : netHourly;
   const hoursNeeded = hourly > 0 ? total / hourly : Infinity;
 
   $('#netHourly').textContent = money(netHourly);
   $('#dispHourly').textContent = money(dispHourly);
   $('#totalPrice').textContent = money(total);
-  $('#hoursNeeded').textContent = hoursFmt(hoursNeeded);
+  $('#hoursNeeded').textContent = fmtTime(hoursNeeded);
 
-  $('#vatNote').textContent = `VAT: ${vatNote}.`;
-  $('#modeNote').textContent = `${mode} mode.`;
-  $('#rateNote').textContent = totalHours > 0 ? `£${(totalNet/12).toFixed(0)}/mo take-home across ${Math.round(totalHours)} h/yr` : 'Add earners and hours';
+  $('#modeNote').textContent = $('#useDisposable').checked ? 'Disposable mode.' : 'Standard mode.';
+  $('#rateNote').textContent = totalHours > 0 ? `£${(totalNet/12).toFixed(0)}/mo across ${Math.round(totalHours)} h/yr` : 'Add earners and hours';
 }
 
 /* Save / Load */
@@ -365,7 +377,6 @@ function saveState() {
   };
   localStorage.setItem('hta_state', JSON.stringify(state)); calculate();
 }
-
 function loadState() {
   const raw = localStorage.getItem('hta_state');
   if (raw) {
