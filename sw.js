@@ -1,5 +1,5 @@
-// sw.js — v6
-const CACHE = 'valuecalc-v6';
+// sw.js — v7
+const CACHE = 'valuecalc-v7';
 const ASSETS = ['./','./index.html','./manifest.json','./sw.js','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e => {
