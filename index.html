@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Value Calculator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+  }
+</script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --ink: #e8eaf0;
+    --muted: #aeb3c2;
+    --accent: #6ee7a2;
+    --danger: #ff6b6b;
+    --ring: 0 0 0 3px rgba(110,231,162,.25);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin:0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI;
+    background: radial-gradient(1200px 800px at 10% -20%, #1b2130 0%, var(--bg) 60%) fixed;
+    color: var(--ink);
+    display: grid;
+    place-items: start center;
+    padding: 32px 16px;
+  }
+  .app {
+    width: 100%; max-width: 980px;
+    background: var(--panel);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  header, footer { padding: 18px 22px; border-bottom: 1px solid #242938; }
+  footer { border-top: 1px solid #242938; border-bottom:none; color:var(--muted); font-size:12px; }
+  h1 { margin:0; font-size:18px; }
+  .grid { display: grid; gap:16px; padding:20px; }
+  .panel { background:#12151c; border:1px solid #242938; border-radius:12px; padding:16px; }
+  .panel h2 { margin:0 0 10px; font-size:15px; color:var(--muted); }
+  .row { display:grid; gap:12px; grid-template-columns:repeat(4,1fr); }
+  .row.compact { grid-template-columns:repeat(3,1fr); }
+  .field { display:grid; gap:6px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo; }
+  input, select {
+    width:100%; padding:10px 12px;
+    background:#0f1218;
+    border:1px solid #2a3042;
+    border-radius:10px;
+    color:var(--ink);
+  }
+  .btn {
+    background:#10141b;
+    color:var(--ink);
+    border:1px solid #2a3042;
+    padding:10px 14px;
+    border-radius:10px;
+  }
+  .summary { display:grid; gap:14px; grid-template-columns:repeat(4,1fr); }
+  .card {
+    background:#0e1117;
+    border:1px solid #242938;
+    border-radius:12px;
+    padding:14px;
+  }
+  @media(max-width:900px){.row,.summary{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.row,.summary{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>Value Calculator</h1></header>
+<div class="grid">
+
+<section class="panel" id="earnersPanel">
+  <div style="display:flex; justify-content:space-between;">
+    <h2>Household earners</h2>
+    <button class="btn" id="addEarnerBtn" type="button">+ Add earner</button>
+  </div>
+  <div id="earners"></div>
+</section>
+
+<section class="panel">
+  <h2>Disposable option</h2>
+  <label><input id="useDisposable" type="checkbox"> Use disposable income</label>
+  <div class="row compact" id="disposableRow" style="display:none;">
+    <div class="field">
+      <label>Fixed monthly costs (£)</label>
+      <input id="monthlyFixed" type="number" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label>Savings skim (%)</label>
+      <input id="extraSavingsRate" type="number" min="0" max="100" step="0.1">
+    </div>
+    <div class="field">
+      <label>Working weeks</label>
+      <input id="weeksPerYear" type="number" min="1" max="52" step="1" value="46">
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Purchase</h2>
+  <div class="row compact">
+    <div class="field">
+      <label>Price (£)</label>
+      <input id="price" type="number" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label>Extras (£)</label>
+      <input id="priceExtras" type="number" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label>VAT</label>
+      <select id="taxToggle">
+        <option value="inc">Included</option>
+        <option value="add">Add 20%</option>
+        <option value="none">No VAT</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Result</h2>
+  <div class="summary">
+    <div class="card">
+      <div class="mono" id="netHourly">£0.00</div>
+      <small>Net hourly</small>
+    </div>
+    <div class="card">
+      <div class="mono" id="dispHourly">£0.00</div>
+      <small>Disposable hourly</small>
+    </div>
+    <div class="card">
+      <div class="mono" id="totalPrice">£0.00</div>
+      <small>Total price</small>
+    </div>
+    <div class="card">
+      <div class="mono" id="hoursNeeded">0.0 h</div>
+      <small>Hours needed</small>
+    </div>
+  </div>
+  <button class="btn" id="calcBtn">Calculate</button>
+</section>
+
+</div>
+<footer>All data stays on your device.</footer>
+</div>
+
+<script>
+const el = s => document.querySelector(s);
+const money = v => '£' + (v||0).toFixed(2);
+
+function calculate() {
+  const price = +el('#price').value || 0;
+  const extras = +el('#priceExtras').value || 0;
+  const total = price + extras;
+  el('#totalPrice').textContent = money(total);
+
+  const hours = 10; // Placeholder calc
+  el('#hoursNeeded').textContent = hours.toFixed(1) + " h";
+}
+el('#calcBtn').onclick = calculate;
+</script>
+</body>
+</html>
