@@ -18,20 +18,27 @@
 <style>
   :root { --bg:#0f1115; --panel:#171a21; --ink:#e8eaf0; --muted:#aeb3c2; --accent:#6ee7a2; --danger:#ff6b6b; --ring:0 0 0 3px rgba(110,231,162,.25); }
   *{box-sizing:border-box}
-  html,body{height:100%; overflow-x:hidden;}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(1200px 800px at 10% -20%,#1b2130 0%,var(--bg) 60%) fixed;color:var(--ink);display:grid;place-items:start center;padding:32px 16px;padding-bottom:calc(80px + env(safe-area-inset-bottom));min-height:100vh}
+  html,body{height:100%; overflow-x:hidden; -webkit-text-size-adjust:100%}
+  body{
+    margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:radial-gradient(1200px 800px at 10% -20%,#1b2130 0%,var(--bg) 60%) fixed;
+    color:var(--ink); display:grid; place-items:start center;
+    padding:32px 16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); min-height:100vh;
+  }
   .app{width:min(100%,980px); max-width:100vw; background:var(--panel); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.4); overflow:hidden}
   header,footer{padding:18px 22px; border-bottom:1px solid #242938}
   footer{border-top:1px solid #242938; border-bottom:none; color:var(--muted); font-size:12px}
   h1{margin:0; font-size:18px; letter-spacing:.2px}
   .grid{display:grid; gap:16px; padding:20px; padding-bottom:20px}
-  .panel{background:#12151c; border:1px solid #242938; border-radius:12px; padding:16px; overflow-wrap:anywhere}
+  .panel{background:#12151c; border:1px solid #242938; border-radius:12px; padding:16px; max-width:100%}
   .panel h2{margin:0 0 10px; font-size:15px; color:var(--muted); font-weight:600}
   .row{display:grid; gap:12px; grid-template-columns:1fr 1fr 1fr 1fr}
   .row.compact{grid-template-columns:1fr 1fr 1fr}
-  .field{display:grid; gap:6px}
-  .field label{font-size:12px; color:var(--muted)}
-  input,select{width:100%; padding:10px 12px; background:#0f1218; border:1px solid #2a3042; border-radius:10px; color:var(--ink); outline:none; transition:box-shadow .15s ease,border-color .15s ease; font-size:16px}
+  .field{display:grid; gap:6px; min-width:0}
+  .field label{font-size:12px; color:var(--muted); white-space:normal; word-break:normal}
+  input,select{
+    width:100%; padding:10px 12px; background:#0f1218; border:1px solid #2a3042; border-radius:10px; color:var(--ink); outline:none; transition:box-shadow .15s ease,border-color .15s ease; font-size:16px
+  }
   input:focus,select:focus{border-color:var(--accent); box-shadow:var(--ring)}
   input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
   .btn{display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:#10141b; border:1px solid #2a3042; color:var(--ink); cursor:pointer}
@@ -44,9 +51,11 @@
   .right{text-align:right}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .summary{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:6px}
-  .card{background:#0e1117; border:1px solid #242938; border-radius:12px; padding:14px; overflow-wrap:anywhere}
+  .card{background:#0e1117; border:1px solid #242938; border-radius:12px; padding:14px; max-width:100%}
   .big{font-size:24px; font-weight:700}
   .muted{color:var(--muted); font-size:12px}
+  .toggle{display:flex; align-items:center; gap:10px}
+  .toggle span{white-space:normal; word-break:break-word}
   .hr{height:1px; background:#242938; margin:10px 0}
   @media (max-width:900px){.row,.row.compact,.summary{grid-template-columns:1fr 1fr}}
   @media (max-width:560px){.row,.row.compact,.summary{grid-template-columns:1fr}}
@@ -54,10 +63,9 @@
 </head>
 <body>
   <div class="app" id="app">
-    <header><h1>Value Calculator <span style="font-weight:400;color:#aeb3c2">v5 UK</span></h1></header>
+    <header><h1>Value Calculator <span style="font-weight:400;color:#aeb3c2">v6</span></h1></header>
 
     <div class="grid">
-      <!-- Earners -->
       <section class="panel" id="earnersPanel">
         <div class="split">
           <h2>Household earners</h2>
@@ -66,12 +74,11 @@
         <div id="earners"></div>
       </section>
 
-      <!-- Disposable toggle -->
       <section class="panel">
         <h2>Disposable option</h2>
-        <label style="display:flex;align-items:center;gap:8px;">
+        <label class="toggle">
           <input id="useDisposable" type="checkbox" />
-          Use disposable income (after fixed monthly costs)
+          <span>Use disposable income (after fixed monthly costs)</span>
         </label>
         <div class="row compact" id="disposableRow" style="margin-top:10px; display:none;">
           <div class="field">
@@ -89,7 +96,6 @@
         </div>
       </section>
 
-      <!-- Purchase -->
       <section class="panel">
         <h2>Purchase</h2>
         <div class="row compact">
@@ -112,7 +118,6 @@
         </div>
       </section>
 
-      <!-- Results -->
       <section class="panel" id="resultsPanel">
         <h2>Result</h2>
         <div class="summary">
@@ -147,9 +152,7 @@
       </section>
     </div>
 
-    <footer>
-      UK PAYE rules simplified for 2024/25. Personal Allowance £12,570, basic 20%, higher 40%, additional 45%. NI 8% to £50,270 then 2%. Pension reduces tax and, if salary sacrifice, NI.
-    </footer>
+    <footer>UK PAYE simplified. Personal Allowance £12,570; basic 20%, higher 40%, additional 45%; NI 8% to £50,270 then 2%.</footer>
   </div>
 
 <script>
@@ -160,43 +163,34 @@ const money = v => isFinite(v) ? '£' + (Math.round(v * 100) / 100).toFixed(2) :
 const hoursFmt = v => isFinite(v) && v !== Infinity ? (Math.round(v * 10) / 10).toFixed(1) + ' h' : '—';
 const debounce = (fn, ms) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms);} };
 
-/* UK PAYE 2024/25 simplified */
+/* UK PAYE simplified */
 function ukNetFromGross({gross, pensionPct=0, salarySacrifice=true, personalAllowance=12570}) {
   gross = Math.max(0, +gross || 0);
-  const pension = Math.max(0, Math.min(100, +pensionPct||0)) / 100;
+  const p = Math.max(0, Math.min(100, +pensionPct||0)) / 100;
 
-  // Adjusted gross for pension
-  const pensionAmt = gross * pension;
-  const grossForTax = gross - pensionAmt; // net pay arrangement effect
+  const pensionAmt = gross * p;
+  const grossForTax = gross - pensionAmt;
   const grossForNI  = salarySacrifice ? (gross - pensionAmt) : gross;
 
-  // Personal allowance taper above £100k
   let pa = personalAllowance;
   const taperExcess = Math.max(0, grossForTax - 100000);
   pa = Math.max(0, pa - Math.floor(taperExcess / 2));
 
   const taxable = Math.max(0, grossForTax - pa);
-
-  // Income tax bands
-  let tax = 0;
-  const basicBand = 37700;
-  const higherCap = 125140; // start of additional rate
+  const basicBand = 37700, higherCap = 125140;
   const atBasic  = Math.min(taxable, basicBand);
   const atHigher = Math.min(Math.max(taxable - basicBand, 0), Math.max(higherCap - basicBand, 0));
   const atAddl   = Math.max(taxable - higherCap, 0);
-  tax = atBasic*0.20 + atHigher*0.40 + atAddl*0.45;
+  const tax = atBasic*0.20 + atHigher*0.40 + atAddl*0.45;
 
-  // Employee NI
-  const niPT = 12570;
-  const niUEL = 50270;
+  const niPT=12570, niUEL=50270;
   const niEarn = Math.max(0, grossForNI - niPT);
   const niBasic = Math.min(Math.max(0, niUEL - niPT), niEarn) * 0.08;
   const niHigh  = Math.max(0, niEarn - (niUEL - niPT)) * 0.02;
   const ni = niBasic + niHigh;
 
-  // Net
   const net = gross - pensionAmt - tax - ni;
-  return { net, tax, ni, pensionAmt, grossForTax, grossForNI, pa };
+  return { net };
 }
 
 /* Earners UI */
@@ -218,23 +212,15 @@ function earnerTemplate(id) {
         </select>
       </div>
       <div class="field"><label>Amount</label><input type="number" min="0" step="0.01" class="amount" placeholder="e.g. 36000" /></div>
-
       <div class="field ukOnly"><label>Pension contribution (%)</label><input type="number" min="0" max="100" step="0.1" class="pensionPct" value="5" /></div>
     </div>
-
     <div class="row compact" style="margin-top:10px;">
       <div class="field"><label>Hours per week</label><input type="number" min="0" step="0.1" class="hoursPerWeek" value="37.5" /></div>
       <div class="field"><label>Weeks per year</label><input type="number" min="1" max="52" step="1" class="weeksPerYear" value="46" /></div>
-
       <div class="field nonUkOnly"><label>Other deductions (£/month)</label><input type="number" min="0" step="0.01" class="otherDeduct" value="0" /></div>
-
       <div class="field ukOnly"><label>Salary sacrifice pension?</label>
-        <select class="salarySacrifice">
-          <option value="yes" selected>Yes</option>
-          <option value="no">No</option>
-        </select>
+        <select class="salarySacrifice"><option value="yes" selected>Yes</option><option value="no">No</option></select>
       </div>
-
       <div class="field right"><label>&nbsp;</label><button class="btn danger removeBtn" type="button">Remove</button></div>
     </div>
   </div>`;
@@ -242,10 +228,8 @@ function earnerTemplate(id) {
 
 function addEarner(prefill) {
   const id = earnerId++;
-  const wrap = document.createElement('div');
-  wrap.innerHTML = earnerTemplate(id);
-  const card = wrap.firstElementChild;
-  earnersDiv.appendChild(card);
+  const wrap = document.createElement('div'); wrap.innerHTML = earnerTemplate(id);
+  const card = wrap.firstElementChild; earnersDiv.appendChild(card);
 
   const incomeTypeSel = card.querySelector('.incomeType');
   const pensionField = card.querySelector('.pensionPct').closest('.field');
@@ -266,7 +250,7 @@ function addEarner(prefill) {
   }
 
   card.querySelector('.removeBtn').addEventListener('click', () => { card.remove(); calculate(); });
-  $$('.field input, .field select', card).forEach(n => n.addEventListener('input', debounce(calculate, 120)));
+  Array.from(card.querySelectorAll('.field input, .field select')).forEach(n => n.addEventListener('input', debounce(calculate, 120)));
 }
 
 /* Disposable toggle */
@@ -281,9 +265,7 @@ useDisposable.addEventListener('change', () => { disposableRow.style.display = u
 /* Buttons */
 document.getElementById('addEarnerBtn').addEventListener('click', () => addEarner());
 document.getElementById('calcBtn').addEventListener('click', calculate);
-document.getElementById('toggleModeBtn').addEventListener('click', () => {
-  useDisposable.checked = !useDisposable.checked; useDisposable.dispatchEvent(new Event('change'));
-});
+document.getElementById('toggleModeBtn').addEventListener('click', () => { useDisposable.checked = !useDisposable.checked; useDisposable.dispatchEvent(new Event('change')); });
 document.getElementById('saveBtn').addEventListener('click', saveState);
 document.getElementById('resetBtn').addEventListener('click', () => { localStorage.removeItem('hta_state'); location.reload(); });
 
@@ -296,7 +278,6 @@ function collectEarners() {
     const wpy = +c.querySelector('.weeksPerYear').value || 0;
 
     let annualNet = 0;
-
     if (incomeType === 'annual_net') {
       const other = +c.querySelector('.otherDeduct').value || 0;
       annualNet = Math.max(0, amount - (other * 12));
@@ -311,7 +292,6 @@ function collectEarners() {
       const { net } = ukNetFromGross({ gross: amount, pensionPct, salarySacrifice });
       annualNet = net;
     }
-
     const annualHours = hpw * wpy;
     return { annualNet, annualHours };
   });
@@ -383,8 +363,7 @@ function saveState() {
       otherDeduct: (card.querySelector('.otherDeduct')||{}).value
     }))
   };
-  localStorage.setItem('hta_state', JSON.stringify(state));
-  calculate();
+  localStorage.setItem('hta_state', JSON.stringify(state)); calculate();
 }
 
 function loadState() {
@@ -402,9 +381,7 @@ function loadState() {
       $('#taxToggle').value = s.taxToggle ?? 'inc';
       if (Array.isArray(s.earners) && s.earners.length) {
         earnersDiv.innerHTML = '';
-        s.earners.forEach(e => {
-          addEarner();
-          const last = earnersDiv.lastElementChild;
+        s.earners.forEach(e => { addEarner(); const last=earnersDiv.lastElementChild;
           last.querySelector('.incomeType').value = e.incomeType ?? 'annual_net';
           (last.querySelector('.amount')||{}).value = e.amount ?? '';
           const p = last.querySelector('.pensionPct'); if (p) p.value = e.pensionPct ?? '5';
@@ -416,10 +393,7 @@ function loadState() {
         });
       }
     } catch {}
-  } else {
-    addEarner({ amount: 32000, hoursPerWeek: 37.5, weeksPerYear: 46 });
-    addEarner({ amount: 18000, hoursPerWeek: 20, weeksPerYear: 46 });
-  }
+  } else { addEarner(); }
   if (!document.querySelector('.earner')) addEarner();
   calculate();
 }
