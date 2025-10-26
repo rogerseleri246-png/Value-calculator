@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Value Calculator</title>
+
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -13,162 +14,355 @@
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
   }
 </script>
+
 <style>
-  :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --ink: #e8eaf0;
-    --muted: #aeb3c2;
-    --accent: #6ee7a2;
-    --danger: #ff6b6b;
-    --ring: 0 0 0 3px rgba(110,231,162,.25);
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin:0; }
-  body {
-    font-family: system-ui, -apple-system, Segoe UI;
-    background: radial-gradient(1200px 800px at 10% -20%, #1b2130 0%, var(--bg) 60%) fixed;
-    color: var(--ink);
-    display: grid;
-    place-items: start center;
-    padding: 32px 16px;
-  }
-  .app {
-    width: 100%; max-width: 980px;
-    background: var(--panel);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  header, footer { padding: 18px 22px; border-bottom: 1px solid #242938; }
-  footer { border-top: 1px solid #242938; border-bottom:none; color:var(--muted); font-size:12px; }
-  h1 { margin:0; font-size:18px; }
-  .grid { display: grid; gap:16px; padding:20px; }
-  .panel { background:#12151c; border:1px solid #242938; border-radius:12px; padding:16px; }
-  .panel h2 { margin:0 0 10px; font-size:15px; color:var(--muted); }
-  .row { display:grid; gap:12px; grid-template-columns:repeat(4,1fr); }
-  .row.compact { grid-template-columns:repeat(3,1fr); }
-  .field { display:grid; gap:6px; }
-  .mono { font-family: ui-monospace, SFMono-Regular, Menlo; }
-  input, select {
-    width:100%; padding:10px 12px;
-    background:#0f1218;
-    border:1px solid #2a3042;
-    border-radius:10px;
-    color:var(--ink);
-  }
-  .btn {
-    background:#10141b;
-    color:var(--ink);
-    border:1px solid #2a3042;
-    padding:10px 14px;
-    border-radius:10px;
-  }
-  .summary { display:grid; gap:14px; grid-template-columns:repeat(4,1fr); }
-  .card {
-    background:#0e1117;
-    border:1px solid #242938;
-    border-radius:12px;
-    padding:14px;
-  }
-  @media(max-width:900px){.row,.summary{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){.row,.summary{grid-template-columns:1fr}}
+  :root { --bg:#0f1115; --panel:#171a21; --ink:#e8eaf0; --muted:#aeb3c2; --accent:#6ee7a2; --danger:#ff6b6b; --ring:0 0 0 3px rgba(110,231,162,.25); }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(1200px 800px at 10% -20%,#1b2130 0%,var(--bg) 60%) fixed;color:var(--ink);display:grid;place-items:start center;padding:32px 16px}
+  .app{width:100%;max-width:980px;background:var(--panel);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.4);overflow:hidden}
+  header,footer{padding:18px 22px;border-bottom:1px solid #242938}
+  footer{border-top:1px solid #242938;border-bottom:none;color:var(--muted);font-size:12px}
+  h1{margin:0;font-size:18px;letter-spacing:.2px}
+  .grid{display:grid;gap:16px;padding:20px}
+  .panel{background:#12151c;border:1px solid #242938;border-radius:12px;padding:16px}
+  .panel h2{margin:0 0 10px;font-size:15px;color:var(--muted);font-weight:600}
+  .row{display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr 1fr}
+  .row.compact{grid-template-columns:1fr 1fr 1fr}
+  .field{display:grid;gap:6px}
+  .field label{font-size:12px;color:var(--muted)}
+  input,select{width:100%;padding:10px 12px;background:#0f1218;border:1px solid #2a3042;border-radius:10px;color:var(--ink);outline:none;transition:box-shadow .15s ease,border-color .15s ease}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:var(--ring)}
+  input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;background:#10141b;border:1px solid #2a3042;color:var(--ink);cursor:pointer}
+  .btn:hover{border-color:var(--accent)}
+  .btn.accent{background:linear-gradient(135deg,#2b7a5b,#1f5a43);border-color:#2b7a5b}
+  .btn.danger{border-color:#4f1c1c;color:#ffbcbc}
+  .stack{display:flex;flex-wrap:wrap;gap:10px}
+  .earner{border:1px dashed #2a3042;border-radius:12px;padding:12px;margin-top:8px}
+  .split{display:grid;grid-template-columns:1fr auto;align-items:start;gap:10px}
+  .right{text-align:right}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
+  .card{background:#0e1117;border:1px solid #242938;border-radius:12px;padding:14px}
+  .big{font-size:24px;font-weight:700}
+  .muted{color:var(--muted);font-size:12px}
+  .hr{height:1px;background:#242938;margin:10px 0}
+  @media (max-width:900px){.row,.row.compact,.summary{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.row,.row.compact,.summary{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="app">
-<header><h1>Value Calculator</h1></header>
-<div class="grid">
+  <div class="app" id="app">
+    <header>
+      <h1>Value Calculator <span style="font-weight:400;color:#aeb3c2">v3</span></h1>
+    </header>
 
-<section class="panel" id="earnersPanel">
-  <div style="display:flex; justify-content:space-between;">
-    <h2>Household earners</h2>
-    <button class="btn" id="addEarnerBtn" type="button">+ Add earner</button>
+    <div class="grid">
+      <!-- Earners -->
+      <section class="panel" id="earnersPanel">
+        <div class="split">
+          <h2>Household earners</h2>
+          <button class="btn" id="addEarnerBtn" type="button">+ Add earner</button>
+        </div>
+        <div id="earners"></div>
+      </section>
+
+      <!-- Disposable toggle -->
+      <section class="panel">
+        <h2>Disposable option</h2>
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input id="useDisposable" type="checkbox" />
+          Use disposable income (after fixed monthly costs)
+        </label>
+        <div class="row compact" id="disposableRow" style="margin-top:10px; display:none;">
+          <div class="field">
+            <label for="monthlyFixed">Fixed monthly costs (£)</label>
+            <input id="monthlyFixed" type="number" min="0" step="0.01" placeholder="e.g. 2200" />
+          </div>
+          <div class="field">
+            <label for="extraSavingsRate">Savings skim (% of income)</label>
+            <input id="extraSavingsRate" type="number" min="0" max="100" step="0.1" value="0" />
+          </div>
+          <div class="field">
+            <label for="weeksPerYear">Working weeks per year</label>
+            <input id="weeksPerYear" type="number" min="1" max="52" step="1" value="46" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Purchase -->
+      <section class="panel">
+        <h2>Purchase</h2>
+        <div class="row compact">
+          <div class="field">
+            <label for="price">Price (£)</label>
+            <input id="price" type="number" min="0" step="0.01" placeholder="e.g. 799.99" />
+          </div>
+          <div class="field">
+            <label for="priceExtras">Fees, delivery, add-ons (£)</label>
+            <input id="priceExtras" type="number" min="0" step="0.01" value="0" />
+          </div>
+          <div class="field">
+            <label for="taxToggle">Include VAT?</label>
+            <select id="taxToggle">
+              <option value="inc">Price already includes VAT</option>
+              <option value="add">Add 20% VAT</option>
+              <option value="none">No VAT</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section class="panel" id="resultsPanel">
+        <h2>Result</h2>
+        <div class="summary">
+          <div class="card">
+            <div class="muted">Household net hourly rate</div>
+            <div class="big mono" id="netHourly">£0.00</div>
+            <div class="muted" id="rateNote">Based on inputs</div>
+          </div>
+          <div class="card">
+            <div class="muted">Effective hourly (disposable mode)</div>
+            <div class="big mono" id="dispHourly">£0.00</div>
+            <div class="muted">After fixed costs and savings skim</div>
+          </div>
+          <div class="card">
+            <div class="muted">Total price considered</div>
+            <div class="big mono" id="totalPrice">£0.00</div>
+            <div class="muted" id="vatNote">VAT handling</div>
+          </div>
+          <div class="card">
+            <div class="muted">Hours needed</div>
+            <div class="big mono" id="hoursNeeded">0.0 h</div>
+            <div class="muted" id="modeNote">Standard or disposable</div>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn accent" id="calcBtn" type="button">Calculate</button>
+          <button class="btn" id="toggleModeBtn" type="button">Toggle standard / disposable</button>
+          <button class="btn" id="saveBtn" type="button">Save inputs</button>
+          <button class="btn danger" id="resetBtn" type="button">Reset</button>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      Built for simple comparisons. Uses your entered net figures. No external services. Data is saved locally by your browser.
+    </footer>
   </div>
-  <div id="earners"></div>
-</section>
-
-<section class="panel">
-  <h2>Disposable option</h2>
-  <label><input id="useDisposable" type="checkbox"> Use disposable income</label>
-  <div class="row compact" id="disposableRow" style="display:none;">
-    <div class="field">
-      <label>Fixed monthly costs (£)</label>
-      <input id="monthlyFixed" type="number" min="0" step="0.01">
-    </div>
-    <div class="field">
-      <label>Savings skim (%)</label>
-      <input id="extraSavingsRate" type="number" min="0" max="100" step="0.1">
-    </div>
-    <div class="field">
-      <label>Working weeks</label>
-      <input id="weeksPerYear" type="number" min="1" max="52" step="1" value="46">
-    </div>
-  </div>
-</section>
-
-<section class="panel">
-  <h2>Purchase</h2>
-  <div class="row compact">
-    <div class="field">
-      <label>Price (£)</label>
-      <input id="price" type="number" min="0" step="0.01">
-    </div>
-    <div class="field">
-      <label>Extras (£)</label>
-      <input id="priceExtras" type="number" min="0" step="0.01">
-    </div>
-    <div class="field">
-      <label>VAT</label>
-      <select id="taxToggle">
-        <option value="inc">Included</option>
-        <option value="add">Add 20%</option>
-        <option value="none">No VAT</option>
-      </select>
-    </div>
-  </div>
-</section>
-
-<section class="panel">
-  <h2>Result</h2>
-  <div class="summary">
-    <div class="card">
-      <div class="mono" id="netHourly">£0.00</div>
-      <small>Net hourly</small>
-    </div>
-    <div class="card">
-      <div class="mono" id="dispHourly">£0.00</div>
-      <small>Disposable hourly</small>
-    </div>
-    <div class="card">
-      <div class="mono" id="totalPrice">£0.00</div>
-      <small>Total price</small>
-    </div>
-    <div class="card">
-      <div class="mono" id="hoursNeeded">0.0 h</div>
-      <small>Hours needed</small>
-    </div>
-  </div>
-  <button class="btn" id="calcBtn">Calculate</button>
-</section>
-
-</div>
-<footer>All data stays on your device.</footer>
-</div>
 
 <script>
-const el = s => document.querySelector(s);
-const money = v => '£' + (v||0).toFixed(2);
+/* Utils */
+const $ = (s, c=document) => c.querySelector(s);
+const $$ = (s, c=document) => Array.from(c.querySelectorAll(s));
+const money = v => isFinite(v) ? '£' + (Math.round(v * 100) / 100).toFixed(2) : '£0.00';
+const hoursFmt = v => isFinite(v) && v !== Infinity ? (Math.round(v * 10) / 10).toFixed(1) + ' h' : '—';
+const debounce = (fn, ms) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms);} };
+
+/* Earners UI */
+const earnersDiv = $('#earners');
+let earnerId = 0;
+
+function earnerTemplate(id) {
+  return `
+  <div class="earner" data-id="${id}">
+    <div class="row">
+      <div class="field"><label>Name (optional)</label><input type="text" class="name" placeholder="e.g. Elle" /></div>
+      <div class="field">
+        <label>Income type</label>
+        <select class="incomeType">
+          <option value="annual_net">Annual take-home (£/year)</option>
+          <option value="monthly_net">Monthly take-home (£/month)</option>
+          <option value="hourly_net">Hourly take-home (£/hour)</option>
+          <option value="annual_gross">Annual gross (£/year)</option>
+        </select>
+      </div>
+      <div class="field"><label>Amount</label><input type="number" min="0" step="0.01" class="amount" placeholder="e.g. 36000" /></div>
+      <div class="field"><label>Approx. tax + NI on gross (%)</label><input type="number" min="0" max="70" step="0.1" class="taxPct" value="33" /></div>
+    </div>
+    <div class="row compact" style="margin-top:10px;">
+      <div class="field"><label>Hours per week</label><input type="number" min="0" step="0.1" class="hoursPerWeek" value="37.5" /></div>
+      <div class="field"><label>Weeks per year</label><input type="number" min="1" max="52" step="1" class="weeksPerYear" value="46" /></div>
+      <div class="field"><label>Other deductions (£/month)</label><input type="number" min="0" step="0.01" class="otherDeduct" value="0" /></div>
+      <div class="field right"><label>&nbsp;</label><button class="btn danger removeBtn" type="button">Remove</button></div>
+    </div>
+  </div>`;
+}
+
+function addEarner(prefill) {
+  const id = earnerId++;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = earnerTemplate(id);
+  const card = wrap.firstElementChild;
+  earnersDiv.appendChild(card);
+
+  if (prefill) {
+    for (const [cls, val] of Object.entries(prefill)) {
+      const node = card.querySelector('.' + cls);
+      if (node) node.value = val;
+    }
+  }
+  const incomeTypeSel = card.querySelector('.incomeType');
+  const taxPctField = card.querySelector('.taxPct').closest('.field');
+  const otherDeductField = card.querySelector('.otherDeduct').closest('.field');
+
+  function toggles() {
+    const t = incomeTypeSel.value;
+    taxPctField.style.display = (t === 'annual_gross') ? 'grid' : 'none';
+    otherDeductField.style.display = (t === 'monthly_net' || t === 'annual_net') ? 'grid' : 'none';
+  }
+  incomeTypeSel.addEventListener('change', toggles);
+  toggles();
+
+  card.querySelector('.removeBtn').addEventListener('click', () => { card.remove(); calculate(); });
+  $$('input, select', card).forEach(n => n.addEventListener('input', debounce(calculate, 150)));
+}
+
+/* Disposable toggle */
+const useDisposable = $('#useDisposable');
+const disposableRow = $('#disposableRow');
+useDisposable.addEventListener('change', () => {
+  disposableRow.style.display = useDisposable.checked ? 'grid' : 'none';
+  calculate();
+});
+
+/* Purchase listeners */
+['#price','#priceExtras','#taxToggle','#monthlyFixed','#extraSavingsRate','#weeksPerYear']
+  .forEach(sel => $(sel).addEventListener('input', debounce(calculate,150)));
+
+/* Buttons */
+document.getElementById('addEarnerBtn').addEventListener('click', () => addEarner());
+document.getElementById('calcBtn').addEventListener('click', calculate);
+document.getElementById('toggleModeBtn').addEventListener('click', () => {
+  useDisposable.checked = !useDisposable.checked; useDisposable.dispatchEvent(new Event('change'));
+});
+document.getElementById('saveBtn').addEventListener('click', saveState);
+document.getElementById('resetBtn').addEventListener('click', () => { localStorage.removeItem('hta_state'); location.reload(); });
+
+/* Maths */
+function collectEarners() {
+  return $$('.earner').map(c => {
+    const incomeType = c.querySelector('.incomeType').value;
+    const amount = +c.querySelector('.amount').value || 0;
+    const taxPct = +c.querySelector('.taxPct').value || 0;
+    const hpw = +c.querySelector('.hoursPerWeek').value || 0;
+    const wpy = +c.querySelector('.weeksPerYear').value || 0;
+    const otherDeduct = +c.querySelector('.otherDeduct').value || 0;
+
+    let annualNet = 0;
+    if (incomeType === 'annual_net') annualNet = Math.max(0, amount - (otherDeduct * 12));
+    else if (incomeType === 'monthly_net') annualNet = Math.max(0, (amount - otherDeduct) * 12);
+    else if (incomeType === 'hourly_net') annualNet = amount * (hpw * wpy);
+    else if (incomeType === 'annual_gross') annualNet = amount * (1 - taxPct / 100);
+
+    const annualHours = hpw * wpy;
+    return { annualNet, annualHours };
+  });
+}
+
+function householdRates() {
+  const earners = collectEarners();
+  const totalNet = earners.reduce((a, e) => a + e.annualNet, 0);
+  const totalHours = earners.reduce((a, e) => a + e.annualHours, 0);
+  const netHourly = totalHours > 0 ? totalNet / totalHours : 0;
+
+  const fixed = +$('#monthlyFixed').value || 0;
+  const skim = (+$('#extraSavingsRate').value || 0) / 100;
+  const weeksPerYear = +$('#weeksPerYear').value || 46;
+
+  const weeklyHours = earners.reduce((a, e) => a + e.annualHours, 0) / 52;
+  const annualAfterFixed = Math.max(0, totalNet - (fixed * 12)) * (1 - skim);
+  const dispHourly = (weeklyHours * weeksPerYear) > 0 ? annualAfterFixed / (weeklyHours * weeksPerYear) : 0;
+
+  return { netHourly, dispHourly, totalNet, totalHours };
+}
+
+function totalPrice() {
+  const base = +$('#price').value || 0;
+  const extras = +$('#priceExtras').value || 0;
+  const vatMode = $('#taxToggle').value;
+  let total = base + extras;
+  let vatNote = 'Included';
+  if (vatMode === 'add') { total = total * 1.20; vatNote = '20% added'; }
+  else if (vatMode === 'none') vatNote = 'Not applied';
+  return { total, vatNote };
+}
 
 function calculate() {
-  const price = +el('#price').value || 0;
-  const extras = +el('#priceExtras').value || 0;
-  const total = price + extras;
-  el('#totalPrice').textContent = money(total);
+  const { netHourly, dispHourly, totalNet, totalHours } = householdRates();
+  const { total, vatNote } = totalPrice();
+  const mode = useDisposable.checked ? 'Disposable' : 'Standard';
+  const hourly = useDisposable.checked ? dispHourly : netHourly;
+  const hoursNeeded = hourly > 0 ? total / hourly : Infinity;
 
-  const hours = 10; // Placeholder calc
-  el('#hoursNeeded').textContent = hours.toFixed(1) + " h";
+  $('#netHourly').textContent = money(netHourly);
+  $('#dispHourly').textContent = money(dispHourly);
+  $('#totalPrice').textContent = money(total);
+  $('#hoursNeeded').textContent = hoursFmt(hoursNeeded);
+
+  $('#vatNote').textContent = `VAT: ${vatNote}.`;
+  $('#modeNote').textContent = `${mode} mode.`;
+  $('#rateNote').textContent = totalHours > 0 ? `£${(totalNet/12).toFixed(0)}/mo take-home across ${Math.round(totalHours)} h/yr` : 'Add earners and hours';
 }
-el('#calcBtn').onclick = calculate;
+
+/* Save / Load */
+function saveState() {
+  const state = {
+    useDisposable: $('#useDisposable').checked,
+    monthlyFixed: $('#monthlyFixed').value,
+    extraSavingsRate: $('#extraSavingsRate').value,
+    weeksPerYear: $('#weeksPerYear').value,
+    price: $('#price').value,
+    priceExtras: $('#priceExtras').value,
+    taxToggle: $('#taxToggle').value,
+    earners: $$('.earner').map(card => ({
+      name: card.querySelector('.name').value,
+      incomeType: card.querySelector('.incomeType').value,
+      amount: card.querySelector('.amount').value,
+      taxPct: card.querySelector('.taxPct').value,
+      hoursPerWeek: card.querySelector('.hoursPerWeek').value,
+      weeksPerYear: card.querySelector('.weeksPerYear').value,
+      otherDeduct: card.querySelector('.otherDeduct').value
+    }))
+  };
+  localStorage.setItem('hta_state', JSON.stringify(state));
+  calculate();
+}
+
+function loadState() {
+  const raw = localStorage.getItem('hta_state');
+  if (raw) {
+    try {
+      const s = JSON.parse(raw);
+      $('#useDisposable').checked = !!s.useDisposable;
+      $('#disposableRow').style.display = $('#useDisposable').checked ? 'grid' : 'none';
+      $('#monthlyFixed').value = s.monthlyFixed ?? '';
+      $('#extraSavingsRate').value = s.extraSavingsRate ?? '0';
+      $('#weeksPerYear').value = s.weeksPerYear ?? '46';
+      $('#price').value = s.price ?? '';
+      $('#priceExtras').value = s.priceExtras ?? '0';
+      $('#taxToggle').value = s.taxToggle ?? 'inc';
+      if (Array.isArray(s.earners) && s.earners.length) {
+        earnersDiv.innerHTML = '';
+        s.earners.forEach(e => addEarner({
+          name: e.name ?? '',
+          incomeType: e.incomeType ?? 'annual_net',
+          amount: e.amount ?? '',
+          taxPct: e.taxPct ?? '33',
+          hoursPerWeek: e.hoursPerWeek ?? '37.5',
+          weeksPerYear: e.weeksPerYear ?? '46',
+          otherDeduct: e.otherDeduct ?? '0'
+        }));
+      }
+    } catch {}
+  }
+  if (!document.querySelector('.earner')) addEarner(); /* ensure at least one card */
+  calculate();
+}
+window.addEventListener('load', loadState);
 </script>
 </body>
 </html>
